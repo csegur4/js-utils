@@ -1,0 +1,75 @@
+$(function() {
+
+  function getCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+      var c = ca[i];
+      while (c.charAt(0) == ' ')
+        c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) === 0)
+        return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+  }
+
+  function setCookie(cname, cvalue, exdays) {
+    const d = new Date();
+    d.setTime(d.getTime() + (exdays * 86400000));
+    let expires = "expires=" + d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+  }
+
+  const daysToExpire = new Date(2147483647 * 1000).toUTCString();
+
+  if (getCookie('visit') === null) {
+    setCookie('visit', 0, 36525);
+    if (getCookie('visit') == 0) {
+      setTimeout(function() {
+        $('#newsletterModal').modal('show');
+      }, 20000); 
+    }
+  }
+
+  $('#close-modal').click(function() {
+    setCookie('visit', 1, 36525);
+    $('#newsletterModal').modal('hide');
+  });
+
+  $('#newsletterModal').on('hidden.bs.modal', function() {
+    setCookie('visit', 1, 36525);
+  })
+
+});
+
+
+$('.newsletter-form-popup').on('submit', function(e) {
+  e.preventDefault();
+  var _this = $(this),
+    _thisBtn = _this.find('.submit-newsletter'),
+    _thisLoader = _this.find('.loader-newsletter'),
+    _url = 'cms/controllers/Mailchimp_Control',
+    _data = _this.serialize() + '&listId=ID';
+
+  _thisBtn.hide();
+  _thisLoader.show();
+  $.post(_url, _data, function(response) {
+    _thisLoader.hide();
+    _thisBtn.show();
+    try {
+      var jsonResponse = $.parseJSON(response);
+      if (jsonResponse.success == 1) {
+        alert('Thank you for subscribing to our newsletter. An email is on its way with a link to download our guide.');
+        _this[0].reset()
+      } else {
+        alert('Oops! We could not complete your registration at this time.');
+        console.log(jsonResponse);
+      }
+    } catch (err) {
+      alert('Oops! We could not complete your registration at this time.');
+    }
+  }).fail(function(xhr) {
+    alert('Oops! We could not complete your registration at this time.');
+    _thisBtn.show()
+  });
+});
